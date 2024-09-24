@@ -1,7 +1,11 @@
+# import streamlit as st
+# from snowflake.core import Root # requires snowflake>=0.8.0
+# from snowflake.cortex import Complete
+# from snowflake.snowpark.context import get_active_session
+
 import streamlit as st
-from snowflake.core import Root # requires snowflake>=0.8.0
-from snowflake.cortex import Complete
-from snowflake.snowpark.context import get_active_session
+from snowflake.connector import connect  # For Snowflake connector
+from snowflake.snowpark import Session     # For Snowpark if you are using it
 
 def get_snowflake_connection():
     # Access credentials from Streamlit secrets

@@ -3,7 +3,7 @@ channels:
   - snowflake
 dependencies:
   - python=3.8.*
-  - snowflake=0.12.1
+  - snowflake=0.12.0
   - snowflake-ml-python=1.6.1
   - snowflake-snowpark-python=
   - snowflake-connector-python=

@@ -1,0 +1,9 @@
+definition_version: 1
+streamlit:
+  name: CORTEX_PDF_CHATBOT_NEW
+  stage: UWRUXQ6HMOZ92Z75
+  query_warehouse: CORTEX_SEARCH_TUTORIAL_WH
+  main_file: streamlit_app.py
+  env_file: environment.yml
+  
+  

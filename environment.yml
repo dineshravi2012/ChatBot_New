@@ -7,3 +7,19 @@ dependencies:
   - snowflake-ml-python=1.6.1
   - snowflake-snowpark-python=
   - streamlit=
+
+  on:
+  push:
+    branches:
+      - main  # or your target branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: pip install --force-reinstall -r requirements.txt

@@ -1,7 +1,7 @@
 name: app_environment
 channels:
   - conda-forge
-  - defaults  # Defaults is necessary to resolve core packages like Python
+  - snowflake  # Defaults is necessary to resolve core packages like Python
 dependencies:
   - python=3.8.*  # Specify the Python version
   - streamlit  # Add version if needed, e.g., streamlit=0.87.0

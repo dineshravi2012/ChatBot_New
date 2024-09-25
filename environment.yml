@@ -1,15 +1,14 @@
 name: app_environment
 channels:
   - conda-forge
-  - snowflake  # Defaults is necessary to resolve core packages like Python
+  - defaults  # Necessary for core packages
 dependencies:
   - python=3.8.*  # Specify the Python version
-  - streamlit  # Add version if needed, e.g., streamlit=0.87.0
+  - streamlit  # Specify version if needed
   - snowflake-connector-python
   - snowflake-snowpark-python
-  - snowflake-ml-python
+  - snowflake-ml-python  # Optional, include if you need ML capabilities
   - pip  # Ensure pip is installed
   - pip:
       - snowflake-cortex  # Required for snowflake.cortex
-      - snowflake=0.12.1  # Specific version for snowflake package
-      - transformers  # Required if you plan to use Hugging Face transformers
+      - transformers  # Optional, if you plan to use Hugging Face models

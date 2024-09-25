@@ -72,7 +72,7 @@ def init_config_options():
         st.success("Conversation cleared!")
 
     st.sidebar.toggle("Debug", key="debug", value=False)
-    st.sidebar.toggle("Use chat history", key="use_chat_history", value=True)
+    st.sidebar.toggle("Use chat history", key="use_chat_history", value=False)
 
     with st.sidebar.expander("Advanced options"):
         st.selectbox("Select model:", MODELS, key="mistral-large")

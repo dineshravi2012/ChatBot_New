@@ -19,9 +19,17 @@ jobs:
           auto-update-conda: true
           python-version: 3.8
 
+      - name: Initialize Conda
+        shell: bash
+        run: |
+          conda init bash  # Initialize Conda in bash shell
+          source ~/.bashrc # Reload bash configuration
+
       - name: Create conda environment from environment.yml
+        shell: bash
         run: |
           conda env create -f environment.yml
+          source ~/.bashrc
           conda activate app_environment
 
       - name: Verify Python version and dependencies

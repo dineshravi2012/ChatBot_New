@@ -18,10 +18,6 @@ jobs:
         with:
           python-version: '3.8'  # or your preferred version
 
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-
       - name: Run Streamlit app
         run: |
           streamlit run streamlit_app.py --server.port=8501

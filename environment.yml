@@ -13,3 +13,6 @@ dependencies:
       - snowflake-connector-python  # Install using pip
       - snowflake-snowpark-python
       - snowflake-ml-python
+      - snowflake
+
+

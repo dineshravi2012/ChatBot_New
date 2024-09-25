@@ -17,12 +17,12 @@ jobs:
         uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: true
-          python-version: 3.8  # The Python version specified in your environment.yml
+          python-version: 3.8
 
       - name: Create conda environment from environment.yml
         run: |
           conda env create -f environment.yml
-          conda activate streamlit-env
+          conda activate app_environment
 
       - name: Verify Python version and dependencies
         run: |
@@ -31,5 +31,5 @@ jobs:
 
       - name: Run Streamlit app
         run: |
-          conda activate streamlit-env
+          conda activate app_environment
           streamlit run streamlit_app.py --server.port=8501

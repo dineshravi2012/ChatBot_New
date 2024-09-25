@@ -1,11 +1,11 @@
-  name: app_environment
+name: app_environment
 channels:
-  - conda-forge  # Use conda-forge for broader package availability
-  - snowflake
+  - conda-forge
+  - defaults  # Defaults is necessary to resolve core packages like Python
 dependencies:
   - python=3.8.*  # Specify the Python version
-  - streamlit  # Specify the version if needed, e.g., streamlit=0.87.0
-  - snowflake-connector-python  # Use pip for these packages
+  - streamlit  # Add version if needed, e.g., streamlit=0.87.0
+  - snowflake-connector-python
   - snowflake-snowpark-python
   - snowflake-ml-python
   - pip  # Ensure pip is installed
@@ -13,5 +13,3 @@ dependencies:
       - snowflake-connector-python  # Install using pip
       - snowflake-snowpark-python
       - snowflake-ml-python
-
-

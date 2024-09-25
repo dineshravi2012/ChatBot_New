@@ -10,10 +10,6 @@ dependencies:
   - snowflake-ml-python
   - pip  # Ensure pip is installed
   - pip:
-      - snowflake=0.12.1
-      - snowflake-connector-python  # Install using pip
-      - snowflake-snowpark-python
-      - snowflake-ml-python
-      
-
-
+      - snowflake-cortex  # Required for snowflake.cortex
+      - snowflake=0.12.1  # Specific version for snowflake package
+      - transformers  # Required if you plan to use Hugging Face transformers

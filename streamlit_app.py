@@ -3,7 +3,7 @@ from snowflake.core import Root  # Requires snowflake>=0.8.0
 from snowflake.cortex import Complete
 from snowflake.snowpark.context import get_active_session
 from snowflake.snowpark import Session
-from transformers import GPT2Tokenizer
+# from transformers import GPT2Tokenizer
 
 # Global variable to hold the Snowpark session
 snowpark_session = None
@@ -74,7 +74,8 @@ def init_config_options():
         st.success("Conversation cleared!")
 
     st.sidebar.toggle("Debug", key="debug", value=False)
-    st.sidebar.toggle("Use chat history", key="use_chat_history", value=False)
+   # Comment out the toggle for chat history
+   # st.sidebar.toggle("Use chat history", key="use_chat_history", value=False)
 
     with st.sidebar.expander("Advanced options"):
         st.selectbox("Select model:", MODELS, key="model_name")

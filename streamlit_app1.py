@@ -1,22 +1,16 @@
 import streamlit as st
 from snowflake.core import Root # requires snowflake>=0.8.0
-from snowflake.cortex import Complete
 from snowflake.snowpark.context import get_active_session
-from snowflake.snowpark import Session
-from transformers import GPT2Tokenizer
-
-# Global variable to hold the Snowpark session
-snowpark_session = None
+from snowflake.connector import connect  # For Snowflake connector
+from snowflake.snowpark import Session     # For Snowpark if you are using it
+from snowflake.cortex import Complete
 
 def get_snowflake_session():
-   
     # Access credentials from Streamlit secrets
     snowflake_credentials = st.secrets["SF_Dinesh2012"]
-    global snowpark_session
-    if snowpark_session is None:
 
     # Create Snowpark session
-     connection_parameters = {
+    connection_parameters = {
         "account": snowflake_credentials["account"],
         "user": snowflake_credentials["user"],
         "password": snowflake_credentials["password"],
@@ -25,17 +19,15 @@ def get_snowflake_session():
         "schema": snowflake_credentials["schema"]
     }
 
-    snowpark_session = Session.builder.configs(connection_parameters).create()
-    return snowpark_session 
-
+    session = Session.builder.configs(connection_parameters).create()
+    return session
 
 MODELS = [
+    "snowflake-arctic",
     "mistral-large",
-    "snowflake-arctic",   
     "llama3-70b",
     "llama3-8b",
 ]
-
 def init_messages():
     """
     Initialize the session state for chat messages. If the session state indicates that the
@@ -159,15 +151,6 @@ def get_chat_history():
 
 
 def complete(model, prompt):
-
-#  # Check the token count before sending the request
-#     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-#     num_tokens = len(tokenizer.encode(prompt))
-    
-#     if num_tokens > 4096:
-#         raise ValueError("Prompt exceeds max token limit. Current tokens: {}".format(num_tokens))
-    
-
     """
     Generate a completion for the given prompt using the specified model.
 
@@ -178,15 +161,8 @@ def complete(model, prompt):
     Returns:
         str: The generated completion.
     """
-    return Complete(model, prompt, session=snowpark_session).replace("$", "\$")
+    return Complete(model, prompt).replace("$", "\$")
 
-def init_session_state():
-    if 'messages' not in st.session_state:
-        st.session_state.messages = []
-    if 'model_name' not in st.session_state:
-        st.session_state.model_name = 'default_model'  # Change this to your model name
-    if 'clear_conversation' not in st.session_state:  # Add this line
-        st.session_state.clear_conversation = False  # Initialize it to a default value
 
 def make_chat_history_summary(chat_history, question):
     """
@@ -287,20 +263,18 @@ def create_prompt(user_question):
             """
     return prompt, results
 
+def init_session_state():
+    # Initialize attributes if they don't exist
+    if "clear_conversation" not in st.session_state:
+        st.session_state.clear_conversation = False  # or any default value you prefer
 
 def main():
+    init_session_state()  # Call the initialization function at the start of main()
     st.title(f":speech_balloon: AI-Powered Chatbot for Document Querying")
 
-    init_session_state()
     init_service_metadata()
     init_config_options()
     init_messages()
-
-    
-
-    # Create a single Snowpark session
-    # session = get_snowflake_session()
-
 
     icons = {"assistant": "❄️", "user": "👤"}
 
@@ -341,6 +315,6 @@ def main():
 
 
 if __name__ == "__main__":
-    session = get_snowflake_session()
+    session = get_snowflake_session();
     root = Root(session)
     main()

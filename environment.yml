@@ -10,9 +10,10 @@ dependencies:
   - snowflake-ml-python
   - pip  # Ensure pip is installed
   - pip:
+      - snowflake
       - snowflake-connector-python  # Install using pip
       - snowflake-snowpark-python
       - snowflake-ml-python
-      - snowflake
+      
 
 

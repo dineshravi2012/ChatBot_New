@@ -80,8 +80,12 @@ def init_config_options():
         [s["name"] for s in st.session_state.service_metadata],
         key="selected_cortex_search_service",
     )
+    
+    # Create a button and capture its return value
+    if st.sidebar.button("Clear conversation", key="clear_conversation"):
+        # If button is clicked, clear the session state
+        st.session_state.clear_conversation = True
 
-    st.sidebar.button("Clear conversation", key="clear_conversation")
     st.sidebar.toggle("Debug", key="debug", value=False)
     st.sidebar.toggle("Use chat history", key="use_chat_history", value=True)
 

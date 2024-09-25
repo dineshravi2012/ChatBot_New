@@ -39,7 +39,7 @@ def init_session_state():
     if 'clear_conversation' not in st.session_state:
         st.session_state.clear_conversation = False
     if 'model_name' not in st.session_state:
-        st.session_state.model_name = 'chatbot_new'  # Change this to your model name
+        st.session_state.model_name = 'default_model'  # Change this to your model name
 
 def init_messages():
     """Initialize the session state for chat messages."""

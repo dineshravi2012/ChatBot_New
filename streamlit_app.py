@@ -75,7 +75,7 @@ def init_config_options():
     st.sidebar.toggle("Use chat history", key="use_chat_history", value=True)
 
     with st.sidebar.expander("Advanced options"):
-        st.selectbox("Select model:", MODELS, key="model_name")
+        st.selectbox("Select model:", MODELS, key="mistral-large")
         st.number_input(
             "Select number of context chunks",
             value=5,

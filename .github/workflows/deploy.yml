@@ -13,9 +13,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      - name: Set up Miniconda
+        uses: conda-incubator/setup-miniconda@v2
         with:
-          python-version: '3.8'  # or your preferred version
+          auto-update-conda: true
+          python-version: 3.8  # The Python version specified in your environment.yml
 
-  
+      - name: Create conda environment from environment.yml
+        run: |
+          conda env create -f environment.yml
+          conda activate streamlit-env
+
+      - name: Verify Python version and dependencies
+        run: |
+          python --version
+          pip freeze
+
+      - name: Run Streamlit app
+        run: |
+          conda activate streamlit-env
+          streamlit run streamlit_app.py --server.port=8501

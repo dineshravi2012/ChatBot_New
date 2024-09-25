@@ -18,6 +18,4 @@ jobs:
         with:
           python-version: '3.8'  # or your preferred version
 
-      - name: Run Streamlit app
-        run: |
-          streamlit run streamlit_app.py --server.port=8501
+  

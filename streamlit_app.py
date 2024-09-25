@@ -58,6 +58,8 @@ def init_service_metadata():
                 svc_search_col = snowpark_session.sql(f"DESC CORTEX SEARCH SERVICE {svc_name};").collect()[0]["search_column"]
                 service_metadata.append({"name": svc_name, "search_column": svc_search_col})
         st.session_state.service_metadata = service_metadata
+    if not st.session_state.service_metadata:
+        st.error("No Cortex search services found.")
 
 def init_config_options():
     """Initialize configuration options in the sidebar."""

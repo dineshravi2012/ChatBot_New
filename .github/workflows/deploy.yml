@@ -19,17 +19,16 @@ jobs:
           auto-update-conda: true
           python-version: 3.8
 
-      - name: Initialize Conda
+      - name: Initialize Conda and create environment
         shell: bash
         run: |
-          conda init bash  # Initialize Conda in bash shell
-          source ~/.bashrc # Reload bash configuration
-
-      - name: Create conda environment from environment.yml
-        shell: bash
-        run: |
+          # Initialize Conda in the shell
+          conda init bash
+          source ~/.bashrc  # Reload bash configuration to apply changes
+          
+          # Create and activate the environment
           conda env create -f environment.yml
-          source ~/.bashrc
+          source ~/.bashrc  # Make sure environment settings are applied again
           conda activate app_environment
 
       - name: Verify Python version and dependencies
@@ -39,5 +38,6 @@ jobs:
 
       - name: Run Streamlit app
         run: |
+          source ~/.bashrc  # Ensure the environment is active
           conda activate app_environment
           streamlit run streamlit_app.py --server.port=8501

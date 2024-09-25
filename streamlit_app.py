@@ -75,7 +75,7 @@ def init_config_options():
 
     st.sidebar.toggle("Debug", key="debug", value=False)
    # Comment out the toggle for chat history
-   # st.sidebar.toggle("Use chat history", key="use_chat_history", value=False)
+    st.sidebar.toggle("Use chat history", key="use_chat_history", value=False)
 
     with st.sidebar.expander("Advanced options"):
         st.selectbox("Select model:", MODELS, key="model_name")
@@ -125,8 +125,13 @@ def query_cortex_search_service(query, columns=[], filter={}):
 
 def get_chat_history():
     """Retrieve the chat history from session state."""
-    start_index = max(0, len(st.session_state.messages) - st.session_state.num_chat_messages)
-    return st.session_state.messages[start_index:]
+    try:
+        start_index = max(0, len(st.session_state.messages) - st.session_state.num_chat_messages)
+        return st.session_state.messages[start_index:]
+    except Exception as e:
+        # Log the error if needed
+        st.error("Error retrieving chat history. Please try again.")
+        return []  # Return an empty list if an error occurs
 
 def complete(model, prompt):
     """Generate a completion using the specified model."""

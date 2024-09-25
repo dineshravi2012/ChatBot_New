@@ -1,6 +1,6 @@
 import streamlit as st
 from snowflake.core import Root # requires snowflake>=0.8.0
-#from snowflake.snowpark.context import get_active_session
+from snowflake.snowpark.context import get_active_session
 from snowflake.connector import connect  # For Snowflake connector
 from snowflake.snowpark import Session     # For Snowpark if you are using it
 from snowflake.cortex import Complete
@@ -22,30 +22,12 @@ def get_snowflake_session():
     session = Session.builder.configs(connection_parameters).create()
     return session
 
-# def get_snowflake_connection():
-#     # Access credentials from Streamlit secrets
-#     snowflake_credentials = st.secrets["SF_Dinesh2012"]  # Use st.secrets instead of st.config
-
-#     # Create Snowflake connection
-#     conn = connect(
-#         user=snowflake_credentials["user"],
-#         password=snowflake_credentials["password"],
-#         account=snowflake_credentials["account"],
-#         warehouse=snowflake_credentials["warehouse"],
-#         database=snowflake_credentials["database"],
-#         schema=snowflake_credentials["schema"]
-#     )
-
-#     return conn  # Return the connection object
-
-
 MODELS = [
     "snowflake-arctic",
     "mistral-large",
     "llama3-70b",
     "llama3-8b",
 ]
-
 def init_messages():
     """
     Initialize the session state for chat messages. If the session state indicates that the
@@ -56,7 +38,7 @@ def init_messages():
         st.session_state.messages = []
 
 
-def init_service_metadata(session):
+def init_service_metadata():
     """
     Initialize the session state for cortex search service metadata. Query the available
     cortex search services from the Snowflake session and store their names and search
@@ -76,6 +58,43 @@ def init_service_metadata(session):
                 )
 
         st.session_state.service_metadata = service_metadata
+
+
+def init_config_options():
+    """
+    Initialize the configuration options in the Streamlit sidebar. Allow the user to select
+    a cortex search service, clear the conversation, toggle debug mode, and toggle the use of
+    chat history. Also provide advanced options to select a model, the number of context chunks,
+    and the number of chat messages to use in the chat history.
+    """
+    st.sidebar.selectbox(
+        "Select cortex search service:",
+        [s["name"] for s in st.session_state.service_metadata],
+        key="selected_cortex_search_service",
+    )
+
+    st.sidebar.button("Clear conversation", key="clear_conversation")
+    st.sidebar.toggle("Debug", key="debug", value=False)
+    st.sidebar.toggle("Use chat history", key="use_chat_history", value=True)
+
+    with st.sidebar.expander("Advanced options"):
+        st.selectbox("Select model:", MODELS, key="model_name")
+        st.number_input(
+            "Select number of context chunks",
+            value=5,
+            key="num_retrieved_chunks",
+            min_value=1,
+            max_value=10,
+        )
+        st.number_input(
+            "Select number of messages to use in chat history",
+            value=5,
+            key="num_chat_messages",
+            min_value=1,
+            max_value=10,
+        )
+
+    st.sidebar.expander("Session State").write(st.session_state)
 
 
 def query_cortex_search_service(query, columns = [], filter={}):
@@ -131,20 +150,19 @@ def get_chat_history():
     return st.session_state.messages[start_index : len(st.session_state.messages) - 1]
 
 
-# Pass the session explicitly in complete function
-def complete(model, prompt, session):
+def complete(model, prompt):
     """
     Generate a completion for the given prompt using the specified model.
 
     Args:
         model (str): The name of the model to use for completion.
         prompt (str): The prompt to generate a completion for.
-        session (Session): The active Snowpark session to be used.
 
     Returns:
         str: The generated completion.
     """
-    return Complete(model, prompt, session=session).replace("$", "\$")
+    return Complete(model, prompt).replace("$", "\$")
+
 
 def make_chat_history_summary(chat_history, question):
     """
@@ -173,7 +191,7 @@ def make_chat_history_summary(chat_history, question):
         [/INST]
     """
 
-    summary = complete(st.session_state.model_name, prompt,session)
+    summary = complete(st.session_state.model_name, prompt)
 
     if st.session_state.debug:
         st.sidebar.text_area(
@@ -246,72 +264,15 @@ def create_prompt(user_question):
     return prompt, results
 
 def init_session_state():
-    # Initialize the session state keys with default values
+    # Initialize attributes if they don't exist
     if "clear_conversation" not in st.session_state:
-        st.session_state.clear_conversation = False  # Set a default value (e.g., False)
-    if "debug" not in st.session_state:
-        st.session_state.debug = False  # Set a default value (e.g., False)
-    if "use_chat_history" not in st.session_state:
-        st.session_state.use_chat_history = True  # Set a default value (e.g., True)
-    if "num_retrieved_chunks" not in st.session_state:
-        st.session_state.num_retrieved_chunks = 5  # Set a default value for retrieved chunks
-    if "num_chat_messages" not in st.session_state:
-        st.session_state.num_chat_messages = 5  # Set a default value for chat messages
-
-def init_config_options():
-    """
-    Initialize the configuration options in the Streamlit sidebar. Allow the user to select
-    a cortex search service, clear the conversation, toggle debug mode, and toggle the use of
-    chat history. Also provide advanced options to select a model, the number of context chunks,
-    and the number of chat messages to use in the chat history.
-    """
-    st.sidebar.selectbox(
-        "Select cortex search service:",
-        [s["name"] for s in st.session_state.service_metadata],
-        key="selected_cortex_search_service",
-    )
-
-    # Check if the 'Clear conversation' button is clicked
-    if st.sidebar.button("Clear conversation"):
-        st.session_state.clear_conversation = True
-    else:
-        st.session_state.clear_conversation = False
-
-    # Use toggle widgets, but initialize session state if not done yet
-    if "debug" not in st.session_state:
-        st.session_state.debug = False
-    if "use_chat_history" not in st.session_state:
-        st.session_state.use_chat_history = True
-
-    st.sidebar.checkbox("Debug", key="debug")
-    st.sidebar.checkbox("Use chat history", key="use_chat_history")
-
-    with st.sidebar.expander("Advanced options"):
-        st.selectbox("Select model:", MODELS, key="model_name")
-        st.number_input(
-            "Select number of context chunks",
-            value=5,
-            key="num_retrieved_chunks",
-            min_value=1,
-            max_value=10,
-        )
-        st.number_input(
-            "Select number of messages to use in chat history",
-            value=5,
-            key="num_chat_messages",
-            min_value=1,
-            max_value=10,
-        )
-
-    st.sidebar.expander("Session State").write(st.session_state)
-
+        st.session_state.clear_conversation = False  # or any default value you prefer
 
 def main():
+    init_session_state()  # Call the initialization function at the start of main()
     st.title(f":speech_balloon: AI-Powered Chatbot for Document Querying")
-   
-    init_session_state()
-    session = get_snowflake_session()
-    init_service_metadata(session)
+
+    init_service_metadata()
     init_config_options()
     init_messages()
 
@@ -340,7 +301,7 @@ def main():
             prompt, results = create_prompt(question)
             with st.spinner("Thinking..."):
                 generated_response = complete(
-                    st.session_state.model_name, prompt,session
+                    st.session_state.model_name, prompt
                 )
                 # build references table for citation
                 markdown_table = "###### References \n\n| PDF Title | URL |\n|-------|-----|\n"
@@ -354,6 +315,6 @@ def main():
 
 
 if __name__ == "__main__":
-    session = get_snowflake_session()
+    session = get_snowflake_session();
     root = Root(session)
     main()

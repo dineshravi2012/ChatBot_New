@@ -1,7 +1,7 @@
 name: app_environment
 channels:
   - conda-forge
-  - defaults  # Necessary for core packages
+  - snowflake  # Necessary for core packages
 dependencies:
   - python=3.8.*  # Specify the Python version
   - snowflake=0.12.1

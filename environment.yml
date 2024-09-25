@@ -4,6 +4,7 @@ channels:
   - defaults  # Necessary for core packages
 dependencies:
   - python=3.8.*  # Specify the Python version
+  - snowflake=0.12.1
   - streamlit  # Specify version if needed
   - snowflake-connector-python
   - snowflake-snowpark-python

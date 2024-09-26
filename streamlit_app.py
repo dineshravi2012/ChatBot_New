@@ -247,7 +247,7 @@ def main():
                     st.session_state.model_name, prompt
                 )
                 # Build references table for citation
-                markdown_table = "###### References \n\n| PDF Title | URL |\n|-------|-----|\n"
+                markdown_table = "###### References \n\n| Title | URL |\n|-------|-----|\n"
                 for ref in results:
                     markdown_table += f"| {ref['relative_path']} | [Link]({ref['file_url']}) |\n"
 

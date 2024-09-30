@@ -25,12 +25,14 @@ def get_snowflake_session():
         snowpark_session = Session.builder.configs(connection_parameters).create()
     return snowpark_session 
 
-MODELS = [
-    "mistral-large",
+MODELS = [   
     "snowflake-arctic",
+    "mistral-large",
     "llama3-70b",
     "llama3-8b",
 ]
+
+
 
 def init_session_state():
     """Initialize session state variables."""
@@ -39,7 +41,7 @@ def init_session_state():
     if 'clear_conversation' not in st.session_state:
         st.session_state.clear_conversation = False
     if 'model_name' not in st.session_state:
-        st.session_state.model_name = 'mistral-large'  # Change this to your model name
+        st.session_state.model_name = 'snowflake-arctic'  # Change this to your model name
 
 def init_messages():
     """Initialize the session state for chat messages."""
@@ -94,7 +96,7 @@ def init_config_options():
             max_value=10,
         )
 
-    st.sidebar.expander("Session State").write(st.session_state)
+    # st.sidebar.expander("Session State").write(st.session_state)
 
 def query_cortex_search_service(query, columns=[], filter={}):
     """Query the selected cortex search service."""
@@ -211,8 +213,21 @@ def create_prompt(user_question):
             """
     return prompt, results
 
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            /* Optional: Customize background color */
+            .reportview-container {
+                background-color: white;
+            }
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 def main():
-    st.title(":speech_balloon: AI-Powered Chatbot for Document Querying")
+    st.title(":speech_balloon: Hello! I am your AI Chatbot, How can I assist you today?")
 
     init_session_state()
     init_service_metadata()
@@ -246,14 +261,14 @@ def main():
                 generated_response = complete(
                     st.session_state.model_name, prompt
                 )
-                # Build references table for citation
-                markdown_table = "###### References \n\n| Title | URL |\n|-------|-----|\n"
-                for ref in results:
-                    markdown_table += f"| {ref['relative_path']} | [Link]({ref['file_url']}) |\n"
+                # # Build references table for citation
+                # markdown_table = "###### References \n\n| Title | URL |\n|-------|-----|\n"
+                # for ref in results:
+                #     markdown_table += f"| {ref['relative_path']} | [Link]({ref['file_url']}) |\n"
 
                 if results:
-                    st.markdown(markdown_table)
-                message_placeholder.markdown(generated_response.replace("$", "\$"))
+                #     st.markdown(markdown_table)
+                 message_placeholder.markdown(generated_response.replace("$", "\$"))
 
             # Add assistant message to chat history
             st.session_state.messages.append({"role": "assistant", "content": generated_response})

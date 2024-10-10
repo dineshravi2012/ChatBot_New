@@ -4,7 +4,7 @@ channels:
   - defaults  # Necessary to resolve core packages like Python
 dependencies:
   - python=3.8.*  # Specify the Python version
-  - streamlit  # Optionally add a version, e.g., streamlit=0.87.0
+  - streamlit=1.39.0  # Optionally add a version, e.g., streamlit=0.87.0
   - snowflake-connector-python  # Install with conda
   - snowflake-snowpark-python
   - snowflake-ml-python

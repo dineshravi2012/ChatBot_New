@@ -5,6 +5,25 @@ from snowflake.snowpark.context import get_active_session
 from snowflake.snowpark import Session
 # from transformers import GPT2Tokenizer
 
+# Define the greeting message
+GREETING_MESSAGE = {"role": "assistant", "content": "Hello! 👋 I am your AI Chatbot. How can I assist you today?"}
+
+# Import the font in the Streamlit app
+st.markdown(
+    """
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <style>
+    body {
+        font-family: 'Roboto', sans-serif;
+    }
+    .stChatMessage {
+        font-family: 'Roboto', sans-serif;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # Global variable to hold the Snowpark session
 snowpark_session = None
 
@@ -32,12 +51,10 @@ MODELS = [
     "llama3-8b",
 ]
 
-
-
 def init_session_state():
     """Initialize session state variables."""
     if 'messages' not in st.session_state:
-        st.session_state.messages = []
+        st.session_state.messages = [GREETING_MESSAGE]
     if 'clear_conversation' not in st.session_state:
         st.session_state.clear_conversation = False
     if 'model_name' not in st.session_state:
@@ -46,7 +63,7 @@ def init_session_state():
 def init_messages():
     """Initialize the session state for chat messages."""
     if st.session_state.clear_conversation:
-        st.session_state.messages = []  # Clear chat history
+        st.session_state.messages = [GREETING_MESSAGE]  # Reset to greeting message
         st.session_state.clear_conversation = False  # Reset the flag
 
 def init_service_metadata():
@@ -75,7 +92,7 @@ def init_config_options():
         st.session_state.clear_conversation = True  # Set flag to True
         st.success("Conversation cleared!")
 
-    st.sidebar.toggle("Debug", key="debug", value=False)
+    # st.sidebar.toggle("Debug", key="debug", value=False)
    # Comment out the toggle for chat history
     st.sidebar.toggle("Use chat history", key="use_chat_history", value=False)
 
@@ -227,7 +244,7 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 def main():
-    st.title(":speech_balloon: Hello! I am your AI Chatbot, How can I assist you today?")
+    # st.title(":speech_balloon: Hello! I am your AI Chatbot, How can I assist you today?")
 
     init_session_state()
     init_service_metadata()
@@ -238,7 +255,7 @@ def main():
 
     # Display chat messages from history on app rerun
     for message in st.session_state.messages:
-        with st.chat_message(message["role"], avatar=icons[message["role"]]):
+        with st.chat_message(message["role"], avatar=icons.get(message["role"], "💬")):
             st.markdown(message["content"])
 
     disable_chat = (
@@ -261,14 +278,9 @@ def main():
                 generated_response = complete(
                     st.session_state.model_name, prompt
                 )
-                # # Build references table for citation
-                # markdown_table = "###### References \n\n| Title | URL |\n|-------|-----|\n"
-                # for ref in results:
-                #     markdown_table += f"| {ref['relative_path']} | [Link]({ref['file_url']}) |\n"
 
                 if results:
-                #     st.markdown(markdown_table)
-                 message_placeholder.markdown(generated_response.replace("$", "\$"))
+                    message_placeholder.markdown(generated_response.replace("$", "\$"))
 
             # Add assistant message to chat history
             st.session_state.messages.append({"role": "assistant", "content": generated_response})

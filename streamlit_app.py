@@ -175,12 +175,23 @@ MODELS = [
 
 def sanitize_chatbot_response(response):
     """
-    Remove unwanted HTML tags from the chatbot's response.
-    In this case, we are specifically removing closing </div> tags.
+    Remove any unmatched closing </div> tags or extra </div> tags from the chatbot's response.
+    This approach ensures that only valid HTML structure remains.
     """
-    # Use regex to remove any unwanted </div> tags at the end of the response
-    cleaned_response = re.sub(r"</div>\s*$", "", response)
-    return cleaned_response
+    # Use regex to find all </div> tags
+    div_close_tag_pattern = r"</div>"
+    
+    # Check if the number of opening and closing <div> tags is mismatched
+    opening_tags_count = response.count("<div>")
+    closing_tags_count = len(re.findall(div_close_tag_pattern, response))
+    
+    # If there are more closing tags than opening tags, remove the excess ones
+    if closing_tags_count > opening_tags_count:
+        # Remove extra closing </div> tags at the end
+        excess_tags = closing_tags_count - opening_tags_count
+        response = re.sub(f"(</div>\\s*){{{excess_tags}}}$", "", response)
+    
+    return response
 
 def init_session_state():
     """Initialize session state variables.""" 
@@ -381,9 +392,11 @@ def main():
         # Check if service metadata is available
         if "service_metadata" in st.session_state:
             try:
+             # Add a spinner while processing the response
+             with st.spinner("Thinking..."):
                 # Create a prompt for the language model
                 prompt, results = create_prompt(question)
-                # Get the response from the language model
+                # Get the response from the language model                
                 answer = complete(st.session_state.model_name, prompt)
                 # Sanitize the chatbot's response to remove any extra closing tags
                 cleaned_answer = sanitize_chatbot_response(answer)

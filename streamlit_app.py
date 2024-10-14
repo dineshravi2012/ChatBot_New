@@ -412,7 +412,7 @@ def main():
              with st.spinner("Thinking..."):
                 # Create a prompt for the language model
                 prompt, results = create_prompt(question)
-                # Get the response from the language model
+                # Get the response from the language model                
                 answer = complete(st.session_state.model_name, prompt)
                 # Sanitize the chatbot's response to remove any extra closing tags
                 cleaned_answer = sanitize_chatbot_response(answer)

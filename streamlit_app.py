@@ -4,7 +4,7 @@ from snowflake.core import Root  # Requires snowflake>=0.8.0
 from snowflake.cortex import Complete
 from snowflake.snowpark.context import get_active_session
 from snowflake.snowpark import Session
-
+from bs4 import BeautifulSoup
 
 def load_svg(svg_filename):
     with open(svg_filename, "r") as file:
@@ -35,8 +35,18 @@ st.markdown(
     footer {visibility: hidden;}
     header {visibility: hidden;}
     /* Optional: Customize background color */
-    .reportview-container {
-        background-color: white;
+     .reportview-container {
+        background-color: #F7F7F7;  /* Set background color */
+    }
+    .stTextInput, .st-emotion-cache-1f3w014 {
+        background-color: #F40000;  /* Input and button background */
+        color: #FFFFFF;  
+        border-radius: 70%;
+       padding-left: 4px;            /* Text color */
+    }
+    .stMainBlockContainer {
+       background-color: #F7F7F7;
+       margin-top: -20%;
     }
     /* Assistant message container (aligned left) */
     .assistant-message-container {
@@ -175,12 +185,29 @@ MODELS = [
 
 def sanitize_chatbot_response(response):
     """
-    Remove unwanted HTML tags from the chatbot's response.
-    In this case, we are specifically removing closing </div> tags.
+    Use BeautifulSoup to parse and clean the HTML response, ensuring
+    that unmatched closing tags or extra tags are removed.
     """
-    # Use regex to remove any unwanted </div> tags at the end of the response
-    cleaned_response = re.sub(r"</div>\s*$", "", response)
-    return cleaned_response
+    try:
+        # Parse the response as HTML using BeautifulSoup
+        soup = BeautifulSoup(response, "html.parser")
+        
+        # Extract text content if needed, removing any excessive HTML tags
+        cleaned_response = soup.prettify()  # Optionally, can use soup.get_text() for plain text
+        
+        return cleaned_response
+    except Exception as e:
+        # If there's an error, return the raw response
+        return response
+
+# def sanitize_chatbot_response(response):
+#     """
+#     Remove unwanted HTML tags from the chatbot's response.
+#     In this case, we are specifically removing closing </div> tags.
+#     """
+#     # Use regex to remove any unwanted </div> tags at the end of the response
+#     cleaned_response = re.sub(r"</div>\s*$", "", response)
+#     return cleaned_response
 
 def init_session_state():
     """Initialize session state variables.""" 
@@ -320,7 +347,7 @@ hide_streamlit_style = """
             header {visibility: hidden;}
             /* Optional: Customize background color */
             .reportview-container {
-                background-color: white;
+                background-color: grey;
             }
             </style>
             """
@@ -381,6 +408,8 @@ def main():
         # Check if service metadata is available
         if "service_metadata" in st.session_state:
             try:
+                 # Add a spinner while processing the response
+             with st.spinner("Thinking..."):
                 # Create a prompt for the language model
                 prompt, results = create_prompt(question)
                 # Get the response from the language model

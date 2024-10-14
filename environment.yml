@@ -8,6 +8,9 @@ dependencies:
   - snowflake-connector-python  # Install with conda
   - snowflake-snowpark-python
   - snowflake-ml-python
+  - beautifulsoup4
   - pip  # Ensure pip is installed for anything not available on conda
   - pip:
       - snowflake-ml-python  # If not available via conda, install via pip
+      - beautifulsoup4
+

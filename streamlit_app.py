@@ -5,12 +5,12 @@ from snowflake.snowpark.context import get_active_session
 from snowflake.snowpark import Session
 
 # Define the greeting message
-GREETING_MESSAGE = {"role": "assistant", "content": "Hello! 👋 I am your AI Chatbot. How can I assist you today?"}
+GREETING_MESSAGE = {"role": "assistant", "content": "Hello! Welcome to Informa AI. How can I assist you today?"}
 
-# Import the font in the Streamlit app
+# Import the fonts and inject custom CSS for assistant and user messages
 st.markdown(
     """
-    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap" rel="stylesheet">
     <style>
     body {
         font-family: 'Roboto', sans-serif;
@@ -25,6 +25,90 @@ st.markdown(
     /* Optional: Customize background color */
     .reportview-container {
         background-color: white;
+    }
+    /* Assistant message container (aligned left) */
+    .assistant-message-container {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        margin-bottom: 15px;
+    }
+    /* Assistant header: icon and name */
+    .assistant-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+    .assistant-icon {
+        margin-right: 5px;
+        font-size: 24px;
+    }
+    .assistant-name {
+        font-weight: 600;
+        font-size: 14px;
+        color: #333333;
+    }
+    /* Assistant message styling */
+    .assistant-message {
+        background: #FFFFFF 0% 0% no-repeat padding-box;
+        box-shadow: -1px 1px 10px #E2E2E229;
+        border: 0.5px solid #EAEAEA;
+        border-radius: 0px 10px 10px 10px;
+        opacity: 1;
+        padding: 10px;
+        text-align: left;
+        font: normal normal 600 14px/20px 'Poppins', sans-serif;
+        letter-spacing: 0px;
+        color: #333333;
+        max-width: 80%;
+        word-wrap: break-word;
+    }
+    /* User message container (aligned right) */
+    .user-message-container {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        margin-bottom: 15px;
+    }
+    /* User header: name and icon */
+    .user-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+    .user-name {
+        font-weight: 600;
+        font-size: 14px;
+        color: #F40000;
+        margin-right: 5px;
+    }
+    .user-icon {
+        font-size: 24px;
+    }
+    /* User message styling */
+    .user-message {
+        background: #FFF8F8 0% 0% no-repeat padding-box;
+        box-shadow: -1px 1px 10px #E2E2E229;
+        border: 0.5px solid #FF9090;
+        border-radius: 10px 10px 0px 10px;
+        opacity: 1;
+        padding: 10px;
+        text-align: left;
+        font: normal normal medium 14px/20px 'Poppins', sans-serif;
+        letter-spacing: 0px;
+        color: #F40000;
+        max-width: 80%;
+        word-wrap: break-word;
+    }
+     /* Custom style for the chat input area */
+    .stChatInput {
+        background: #FFFFFF 0% 0% no-repeat padding-box;
+        opacity: 1;
+    }
+    /* Custom style for the submit button */
+    .stChatInputSubmitButton {
+        background: #F40000 0% 0% no-repeat padding-box;
+        opacity: 1;
     }
     </style>
     """,
@@ -46,17 +130,21 @@ def get_snowflake_session():
     snowflake_credentials = st.secrets["SF_Dinesh2012"]
     global snowpark_session, root
     if snowpark_session is None:
-        # Create Snowpark session
-        connection_parameters = {
-            "account": snowflake_credentials["account"],
-            "user": snowflake_credentials["user"],
-            "password": snowflake_credentials["password"],
-            "warehouse": snowflake_credentials["warehouse"],
-            "database": snowflake_credentials["database"],
-            "schema": snowflake_credentials["schema"]
-        }
-        snowpark_session = Session.builder.configs(connection_parameters).create()
-        root = Root(snowpark_session)  # Create the Root object
+        try:
+            # Create Snowpark session
+            connection_parameters = {
+                "account": snowflake_credentials["account"],
+                "user": snowflake_credentials["user"],
+                "password": snowflake_credentials["password"],
+                "warehouse": snowflake_credentials["warehouse"],
+                "database": snowflake_credentials["database"],
+                "schema": snowflake_credentials["schema"]
+            }
+            snowpark_session = Session.builder.configs(connection_parameters).create()
+            root = Root(snowpark_session)  # Create the Root object
+        except Exception as e:
+            st.error(f"Failed to create Snowflake session: {e}")
+            st.stop()
     return snowpark_session 
 
 # Define available models (can be set to a default)
@@ -90,14 +178,19 @@ def init_messages():
 def init_service_metadata():
     """Initialize cortex search service metadata.""" 
     if "service_metadata" not in st.session_state:
-        services = snowpark_session.sql("SHOW CORTEX SEARCH SERVICES;").collect()
-        service_metadata = []
-        if services:
-            for s in services:
-                svc_name = s["name"]
-                svc_search_col = snowpark_session.sql(f"DESC CORTEX SEARCH SERVICE {svc_name};").collect()[0]["search_column"]
-                service_metadata.append({"name": svc_name, "search_column": svc_search_col})
-        st.session_state.service_metadata = service_metadata
+        try:
+            services = snowpark_session.sql("SHOW CORTEX SEARCH SERVICES;").collect()
+            service_metadata = []
+            if services:
+                for s in services:
+                    svc_name = s["name"]
+                    svc_search_col = snowpark_session.sql(f"DESC CORTEX SEARCH SERVICE {svc_name};").collect()[0]["search_column"]
+                    service_metadata.append({"name": svc_name, "search_column": svc_search_col})
+            st.session_state.service_metadata = service_metadata
+        except Exception as e:
+            st.error(f"Failed to fetch Cortex search services: {e}")
+            st.session_state.service_metadata = []
+    
     if not st.session_state.service_metadata:
         st.error("No Cortex search services found.")
     else:
@@ -212,41 +305,75 @@ def main():
     init_service_metadata()
     init_messages()
 
-    # Display controls above the chatbot
-    with st.container():
-        # Button to clear conversation
-        if st.button("Clear Conversation"):
-            st.session_state.messages = [GREETING_MESSAGE]  # Reset to greeting message
-            st.success("Conversation cleared!")  # Optional: Display a success message
-
     # Display chat messages from history on app rerun
     for message in st.session_state.messages:
-        with st.chat_message(message["role"], avatar=icons.get(message["role"], "💬")):
-            st.markdown(message["content"])
+        if message["role"] == "assistant":
+            # Assistant message container
+            with st.container():
+                st.markdown(f"""
+                    <div class="assistant-message-container">
+                        <div class="assistant-header">
+                            <span class="assistant-icon">{icons.get("assistant", "🤖")}</span>
+                            <span class="assistant-name">Informa AI</span>
+                        </div>
+                        <div class="assistant-message">{message["content"]}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+        else:
+            # User message container
+            with st.container():
+                st.markdown(f"""
+                    <div class="user-message-container">
+                        <div class="user-header">
+                            <span class="user-name">You</span>
+                            <span class="user-icon">{icons.get("user", "🙋‍♀️")}</span>
+                        </div>
+                        <div class="user-message">{message["content"]}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
 
     disable_chat = (
         "service_metadata" not in st.session_state
         or len(st.session_state.service_metadata) == 0
     )
-    if question := st.chat_input("Ask a question...", disabled=disable_chat):
+    if question := st.chat_input("Type your message here...", disabled=disable_chat):
         # Add user message to chat history
         st.session_state.messages.append({"role": "user", "content": question})
-        # Display user message in chat message
-        with st.chat_message("user", avatar=icons.get("user", "🙋‍♀️")):
-            st.markdown(question)
+        # Display user message in chat message with styled rectangle
+        with st.container():
+            st.markdown(f"""
+                <div class="user-message-container">
+                    <div class="user-header">
+                        <span class="user-name">You</span>
+                        <span class="user-icon">{icons.get("user", "🙋‍♀️")}</span>
+                    </div>
+                    <div class="user-message">{question}</div>
+                </div>
+                """, unsafe_allow_html=True)
 
         # Check if service metadata is available
         if "service_metadata" in st.session_state:
-            # Create a prompt for the language model
-            prompt, results = create_prompt(question)
-            # Get the response from the language model
-            answer = complete(st.session_state.model_name, prompt)
-            # Add assistant's response to chat history
-            st.session_state.messages.append({"role": "assistant", "content": answer})
+            try:
+                # Create a prompt for the language model
+                prompt, results = create_prompt(question)
+                # Get the response from the language model
+                answer = complete(st.session_state.model_name, prompt)
+                # Add assistant's response to chat history
+                st.session_state.messages.append({"role": "assistant", "content": answer})
 
-            # Display assistant's response in chat message
-            with st.chat_message("assistant", avatar=icons.get("assistant", "🤖")):
-                st.markdown(answer)
+                # Display assistant's response in chat message with styled rectangle
+                with st.container():
+                    st.markdown(f"""
+                        <div class="assistant-message-container">
+                            <div class="assistant-header">
+                                <span class="assistant-icon">{icons.get("assistant", "🤖")}</span>
+                                <span class="assistant-name">Informa AI</span>
+                            </div>
+                            <div class="assistant-message">{answer}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+            except Exception as e:
+                st.error(f"An error occurred while processing your request: {e}")
 
 # Execute the app
 if __name__ == "__main__":

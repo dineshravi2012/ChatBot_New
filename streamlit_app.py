@@ -1,8 +1,20 @@
 import streamlit as st
+import re
 from snowflake.core import Root  # Requires snowflake>=0.8.0
 from snowflake.cortex import Complete
 from snowflake.snowpark.context import get_active_session
 from snowflake.snowpark import Session
+
+
+def load_svg(svg_filename):
+    with open(svg_filename, "r") as file:
+        return file.read()
+
+# Load assistant and user icons from their respective SVG files
+assistant_svg = load_svg("assets/chatbot.svg")
+user_svg = load_svg("assets/user.svg")
+
+
 
 # Define the greeting message
 GREETING_MESSAGE = {"role": "assistant", "content": "Hello! Welcome to Informa AI. How can I assist you today?"}
@@ -79,7 +91,7 @@ st.markdown(
     .user-name {
         font-weight: 600;
         font-size: 14px;
-        color: #F40000;
+        color: #black;
         margin-right: 5px;
     }
     .user-icon {
@@ -115,11 +127,16 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Define icons using emojis for simplicity
 icons = {
-    "assistant": "🤖",  # Robot Face
-    "user": "🙋‍♀️"       # Person Raising Hand (Female)
+    "assistant": assistant_svg,  # Loaded chatbot SVG
+    "user": user_svg             # Loaded user SVG
 }
+
+# # Define icons using emojis for simplicity
+# icons = {
+#     "assistant": "🤖",  # Robot Face
+#     "user": "🙋‍♀️"       # Person Raising Hand (Female)
+# }
 
 # Global variables to hold the Snowpark session and Root
 snowpark_session = None
@@ -155,6 +172,15 @@ MODELS = [
     "llama3-70b",
     "llama3-8b",
 ]
+
+def sanitize_chatbot_response(response):
+    """
+    Remove unwanted HTML tags from the chatbot's response.
+    In this case, we are specifically removing closing </div> tags.
+    """
+    # Use regex to remove any unwanted </div> tags at the end of the response
+    cleaned_response = re.sub(r"</div>\s*$", "", response)
+    return cleaned_response
 
 def init_session_state():
     """Initialize session state variables.""" 
@@ -233,6 +259,7 @@ def get_chat_history():
 
 def complete(model, prompt):
     """Generate a completion using the specified model.""" 
+   # answer = Complete(model, prompt, session=snowpark_session).replace("$", "\$")
     return Complete(model, prompt, session=snowpark_session).replace("$", "\$")
 
 def make_chat_history_summary(chat_history, question):
@@ -313,7 +340,7 @@ def main():
                 st.markdown(f"""
                     <div class="assistant-message-container">
                         <div class="assistant-header">
-                            <span class="assistant-icon">{icons.get("assistant", "🤖")}</span>
+                            <span class="assistant-icon">{icons.get("assistant", assistant_svg)}</span>
                             <span class="assistant-name">Informa AI</span>
                         </div>
                         <div class="assistant-message">{message["content"]}</div>
@@ -326,7 +353,7 @@ def main():
                     <div class="user-message-container">
                         <div class="user-header">
                             <span class="user-name">You</span>
-                            <span class="user-icon">{icons.get("user", "🙋‍♀️")}</span>
+                            <span class="user-icon">{icons.get("user", user_svg)}</span>
                         </div>
                         <div class="user-message">{message["content"]}</div>
                     </div>
@@ -345,7 +372,7 @@ def main():
                 <div class="user-message-container">
                     <div class="user-header">
                         <span class="user-name">You</span>
-                        <span class="user-icon">{icons.get("user", "🙋‍♀️")}</span>
+                        <span class="user-icon">{icons.get("user", user_svg)}</span>
                     </div>
                     <div class="user-message">{question}</div>
                 </div>
@@ -358,18 +385,20 @@ def main():
                 prompt, results = create_prompt(question)
                 # Get the response from the language model
                 answer = complete(st.session_state.model_name, prompt)
+                # Sanitize the chatbot's response to remove any extra closing tags
+                cleaned_answer = sanitize_chatbot_response(answer)
                 # Add assistant's response to chat history
-                st.session_state.messages.append({"role": "assistant", "content": answer})
+                st.session_state.messages.append({"role": "assistant", "content": cleaned_answer})
 
                 # Display assistant's response in chat message with styled rectangle
                 with st.container():
                     st.markdown(f"""
                         <div class="assistant-message-container">
                             <div class="assistant-header">
-                                <span class="assistant-icon">{icons.get("assistant", "🤖")}</span>
+                                <span class="assistant-icon">{icons.get("assistant", assistant_svg)}</span>
                                 <span class="assistant-name">Informa AI</span>
                             </div>
-                            <div class="assistant-message">{answer}</div>
+                            <div class="assistant-message">{cleaned_answer}</div>
                         </div>
                         """, unsafe_allow_html=True)
             except Exception as e:

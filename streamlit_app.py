@@ -4,6 +4,7 @@ from snowflake.core import Root  # Requires snowflake>=0.8.0
 from snowflake.cortex import Complete
 from snowflake.snowpark.context import get_active_session
 from snowflake.snowpark import Session
+from deep_translator import GoogleTranslator  # Translation library
 from bs4 import BeautifulSoup
 
 def load_svg(svg_filename):
@@ -17,7 +18,9 @@ user_svg = load_svg("assets/user.svg")
 
 
 # Define the greeting message
-GREETING_MESSAGE = {"role": "assistant", "content": "Hello! Welcome to Informa AI. How can I assist you today?"}
+# Define the greeting message in English and Spanish
+GREETING_MESSAGE_EN = {"role": "assistant", "content": "Hello! Welcome to Informa AI. How can I assist you today?"}
+GREETING_MESSAGE_ES = {"role": "assistant", "content": "¡Hola! Bienvenido a Informa AI. ¿En qué puedo ayudarte hoy?"}
 
 # Import the fonts and inject custom CSS for assistant and user messages
 st.markdown(
@@ -46,7 +49,6 @@ st.markdown(
     }
     .stMainBlockContainer {
        background-color: #F7F7F7;
-       margin-top: -20%;
     }
     /* Assistant message container (aligned left) */
     .assistant-message-container {
@@ -151,6 +153,8 @@ icons = {
 # Global variables to hold the Snowpark session and Root
 snowpark_session = None
 root = None
+user_language = None
+# question_translated = None
 
 def get_snowflake_session():
     # Access credentials from Streamlit secrets
@@ -212,7 +216,7 @@ def sanitize_chatbot_response(response):
 def init_session_state():
     """Initialize session state variables.""" 
     if 'messages' not in st.session_state:
-        st.session_state.messages = [GREETING_MESSAGE]
+        st.session_state.messages = [GREETING_MESSAGE_EN]
     if 'clear_conversation' not in st.session_state:
         st.session_state.clear_conversation = False
     if 'model_name' not in st.session_state:
@@ -225,8 +229,17 @@ def init_session_state():
 def init_messages():
     """Initialize the session state for chat messages.""" 
     if st.session_state.clear_conversation:
-        st.session_state.messages = [GREETING_MESSAGE]  # Reset to greeting message
+        st.session_state.messages = [GREETING_MESSAGE_EN]  # Reset to greeting message
         st.session_state.clear_conversation = False  # Reset the flag
+
+def translate_message(message, target_lang):
+    """Translate the message to the desired language using GoogleTranslator."""
+    try:
+        translator = GoogleTranslator(source='auto', target=target_lang)
+        return translator.translate(message)
+    except Exception as e:
+        st.error(f"Translation error: {e}")
+        return message  # Fallback to original message if translation fails
 
 def init_service_metadata():
     """Initialize cortex search service metadata.""" 
@@ -354,11 +367,44 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 def main():
+    global user_language
+    question_translated = None
+
+    # Step 1: Language selection prompt
+    if "language_selected" not in st.session_state or st.session_state.language_selected is True :
+        language_choice = st.radio("Please choose your language / Por favor, elija su idioma", ("English", "Español"))
+        
+        if language_choice == "English":
+            user_language = "en"
+            st.session_state.messages = [GREETING_MESSAGE_EN]  # English greeting message
+            st.success("You have chosen English!")  # Show success alert
+        else:
+            user_language = "es"
+            st.session_state.messages = [GREETING_MESSAGE_ES]  # Spanish greeting message
+            st.success("¡Has elegido Español!")  # Show success alert
+
+        st.session_state.language_selected = True
+    else:
+        # Check if the first message is the English greeting to determine the language
+        if st.session_state.messages[0]["content"] == GREETING_MESSAGE_EN["content"]:
+            user_language = "en"
+        else:
+            user_language = "es"
+
     # Initialize session state and other components
     init_session_state()
+
+    # Initialize greeting message based on selected language
+    if st.session_state.clear_conversation:
+        if user_language == "es":
+            st.session_state.messages = [GREETING_MESSAGE_ES]  # Reset to Spanish greeting message
+        else:
+            st.session_state.messages = [GREETING_MESSAGE_EN]  # Reset to English greeting message
+        st.session_state.clear_conversation = False
+
     init_service_metadata()
     init_messages()
-
+    
     # Display chat messages from history on app rerun
     for message in st.session_state.messages:
         if message["role"] == "assistant":
@@ -390,9 +436,18 @@ def main():
         "service_metadata" not in st.session_state
         or len(st.session_state.service_metadata) == 0
     )
+    
     if question := st.chat_input("Type your message here...", disabled=disable_chat):
+        # Initialize the question_translated variable with the default question value
+        question_translated = question
+
+        # If the user language is Spanish, translate the question to English
+        if user_language == "es":
+            question_translated = translate_message(question, "en")
+
         # Add user message to chat history
         st.session_state.messages.append({"role": "user", "content": question})
+
         # Display user message in chat message with styled rectangle
         with st.container():
             st.markdown(f"""
@@ -405,35 +460,38 @@ def main():
                 </div>
                 """, unsafe_allow_html=True)
 
-        # Check if service metadata is available
-        if "service_metadata" in st.session_state:
+        # Proceed to generate the answer if the question_translated is valid
+        if question_translated:
             try:
-                 # Add a spinner while processing the response
-             with st.spinner("Thinking..."):
-                # Create a prompt for the language model
-                prompt, results = create_prompt(question)
-                # Get the response from the language model                
-                answer = complete(st.session_state.model_name, prompt)
-                # Sanitize the chatbot's response to remove any extra closing tags
-                cleaned_answer = sanitize_chatbot_response(answer)
-                # Add assistant's response to chat history
-                st.session_state.messages.append({"role": "assistant", "content": cleaned_answer})
+                with st.spinner("Thinking..."):
+                    # Create a prompt for the language model
+                    prompt, results = create_prompt(question_translated)
+                    # Get the response from the language model
+                    answer = complete(st.session_state.model_name, prompt)
+                    # Sanitize the chatbot's response to remove any extra closing tags
+                    cleaned_answer = sanitize_chatbot_response(answer)
 
-                # Display assistant's response in chat message with styled rectangle
-                with st.container():
-                    st.markdown(f"""
-                        <div class="assistant-message-container">
-                            <div class="assistant-header">
-                                <span class="assistant-icon">{icons.get("assistant", assistant_svg)}</span>
-                                <span class="assistant-name">Informa AI</span>
+                    # Translate back the response if the user language is Spanish
+                    if user_language == "es":
+                        cleaned_answer = translate_message(cleaned_answer, "es")
+
+                    # Add assistant's response to chat history
+                    st.session_state.messages.append({"role": "assistant", "content": cleaned_answer})
+
+                    # Display assistant's response in chat message with styled rectangle
+                    with st.container():
+                        st.markdown(f"""
+                            <div class="assistant-message-container">
+                                <div class="assistant-header">
+                                    <span class="assistant-icon">{icons.get("assistant", assistant_svg)}</span>
+                                    <span class="assistant-name">Informa AI</span>
+                                </div>
+                                <div class="assistant-message">{cleaned_answer}</div>
                             </div>
-                            <div class="assistant-message">{cleaned_answer}</div>
-                        </div>
-                        """, unsafe_allow_html=True)
+                            """, unsafe_allow_html=True)
             except Exception as e:
                 st.error(f"An error occurred while processing your request: {e}")
 
-# Execute the app
 if __name__ == "__main__":
     # Establish the Snowflake session
     get_snowflake_session()

@@ -9,8 +9,12 @@ dependencies:
   - snowflake-snowpark-python
   - snowflake-ml-python
   - beautifulsoup4
+  - googletrans==4.0.0-rc1
+  - deep-translator
   - pip  # Ensure pip is installed for anything not available on conda
   - pip:
       - snowflake-ml-python  # If not available via conda, install via pip
       - beautifulsoup4
+      - googletrans
+      - deep-translator
 
